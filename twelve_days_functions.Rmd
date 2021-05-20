@@ -1,5 +1,6 @@
 ---
 title: "Lab: The 12 Days of Christmas"
+author: "Aditi Gajjar"
 output:
   prettydoc::html_pretty:
     theme: tactile
@@ -8,7 +9,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 
 # Packages for Functions
 library(dplyr)
@@ -46,13 +47,22 @@ the function takes a gift and returns the appropriate plural.
 
 pluralize_gift <- function(gift){
 
+gift_length <- str_length(gift)
+  
 gift <- gift %>%
-  str_replace()
+  str_pad(width = gift_length+1, side = "right", pad = "s") %>% 
+  str_replace_all(c("ooses" = "eese",
+                    "ys" = "ies"))
+
 
 return(gift)
 
 }
+
+pluralize_gift(xmas$Gift.Item)
+
 ```
+
 
 *Hint 1:* Note that the gifts on days six and nine have unusual pluralizations.
 You may assume that in other datasets, there will be no special cases besides
@@ -96,47 +106,35 @@ purrr::map_chr(xmas$Gift.Item, pluralize_gift)
 ## Step Two: Creating sentences
 
 Write a function called `make_phrase` that takes as input the necessary information, 
-and returns a phrase.  For example, 
+and returns a phrase.  
 
-```{r}
-make_phrase(num = 10, 
-            num_word = "ten", 
-            item = "lords", 
-            verb = "a-leaping", 
-            adjective = "", 
-            location = "")
-```
-
-should return
-
-```
-"ten lords a-leaping"
-```
 
 ```{r}
 make_phrase <- function(num, num_word, item, verb, adjective, location) {
   
   ## Step 1: Replace NAs with blank strings
   verb <- str_replace_na(verb, "")
-  
+  adjective <- str_replace_na(adjective, "")
+  location <- str_replace_na(location, "")
   ## Step 2: Pluralize the gift if needed
   ## Items with numbers larger than 1 should be pluralized
   ## Single items starting with a vowel should have "an" in front
   ## All other single items should have "a" in front
   
-  vowel_start <- str_sub(item, 1, 1) %>% str_detect(___)
+  vowel_start <- str_sub(item, 1, 1) %>% str_detect('[aeiou]')
   
-  if (___) {
+  if (num > 1) {
     
     item <- pluralize_gift(item)
     
   } else if (vowel_start) {
   
-      
+    item <- paste("an ", item)
     
   } else {
     
-    
+    num_word <- "and"
+    item <- paste("a ", item)
     
   }
   
@@ -158,13 +156,15 @@ to say `"twelve"` **not** `"twelfth"`. I suggest using the **english** package
 to create numbered days and then use those in your `pmap_chr()`!
 
 ```{r}
+library(english)
 xmas <- xmas %>%
   mutate(
-    Full.Phrase = pmap_chr(list(___), 
+    Num.of.Things = words(Day),
+    Full.Phrase = pmap_chr(list(Day, Num.of.Things, Gift.Item, Verb, Adjective, Location), 
                            make_phrase)
+    
   )
 ```
-
 
 ---
 
@@ -186,29 +186,24 @@ Write a function called `sing_line` that takes as input:
 # Arguments -- phrase_col -- The variable name for the column in the dataset that contains the gift phrases
 # Return -- A string singing the line of the song with all gifts for the given day.
 
-sing_day <- function(dataset, line, phrase_col){
+sing_line <- function(dataset, num, phrase_col) {
   
   # Step 1: Setup the intro line
   
-  num_word <- ____
+  num_word <- as.character(english::ordinal(num))
   
   intro <- glue::glue("On the {num_word} day of Christmas")
   
   # Step 2: Sing the gift phrases
 
     phrases <- dataset %>% 
-      pull({{phrase_col}})
+      filter(Day <= num) %>% 
+      pull({{phrase_col}}) 
 
-  ????
+    gifts <- paste(rev(phrases), collapse = '\n') 
     
   ## put it together
-    
-  ????
-
-
-}
-
-
+    full_intro <- paste("\n", intro, ', my true love sent to me,\n', gifts, sep = '') }
 ```
 
 For example,
@@ -236,7 +231,7 @@ column names as arguments to a function.  Don't delete that line of code!
 
 ## Step Four: Use Your Functions!
 
-Run the following code to test out your functions! The ouput should be the 
+Run the following code to test out your functions! The output should be the 
 lyrics for the entire 12 Days of Christmas song. 
 
 ```{r}
@@ -279,4 +274,6 @@ Submit the link to your GitHub repository in the Lab 8 assignment portal.
 __If you downloaded the compressed folder and did not use GitHub:__
 
 Submit **both** your RMarkdown file and knitted HTML file
+
+
 
